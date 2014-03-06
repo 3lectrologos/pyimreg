@@ -57,14 +57,14 @@ def detectSurf(img1, img2):
     return (kp1, kp2, des1, des2)
 
 def detectOrb(img1, img2):
-    detector = cv2.ORB(30000, 1.2, 8, 31, 0, 2, cv2.ORB_HARRIS_SCORE, 31)
+    detector = cv2.ORB(100000, 1.2, 8, 31, 0, 4, cv2.ORB_HARRIS_SCORE, 31)
     kp1, des1 = detector.detectAndCompute(img1, None)
     kp2, des2 = detector.detectAndCompute(img2, None)
     return (kp1, kp2, des1, des2)
 
-def detectBriskFreak(img1, img2):
+def detectFreak(img1, img2):
     detector = cv2.ORB(10000, 1.2, 8, 31, 0, 2, cv2.ORB_HARRIS_SCORE, 31)
-    #detector = cv2.FeatureDetector_create('ORB')
+    #detector = cv2.FeatureDetector_create('')
     descriptor = cv2.DescriptorExtractor_create('FREAK')
     kp1 = detector.detect(img1, None)
     kp2 = detector.detect(img2, None)
@@ -92,25 +92,29 @@ def matchFlann(des1, des2):
 def matchBf(des1, des2, norm=cv2.NORM_HAMMING):
     bf = cv2.BFMatcher(norm, crossCheck=False)
     matches = bf.knnMatch(des1, des2, k=2)
-    goodMatches = [m for (m, n) in matches if m.distance < 0.7*n.distance]
+    goodMatches = [m for (m, n) in matches if m.distance < 0.75*n.distance]
     return (matches, goodMatches)
 
 #FILES = ('rsz_1cab.jpg', 'cab_low.jpg')
-FILES = ('dominos2.jpg', 'dominos1.jpg')
 #FILES = ('cab_new.jpg', 'cab_low.jpg')
-#FILES = ('cab_night.jpg', 'rsz_1cab.jpg')
-#FILES = ('cab_night.jpg', 'cab_low.jpg')
+
+FILES = ('dominos2.jpg', 'dominos1.jpg')
+FILES = ('cab_night.jpg', 'rsz_1cab.jpg')
+FILES = ('back1.jpg', 'back_rain.jpg')
+FILES = ('cab_night.jpg', 'cab_low.jpg')
+FILES = ('back_rain.jpg', 'back_small.jpg')
 img1 = cv2.imread(FILES[0], cv2.IMREAD_GRAYSCALE)
-img1 = cv2.resize(img1, (640, 360))
+img1 = cv2.resize(img1, (512, 288))
 img2 = cv2.imread(FILES[1], cv2.IMREAD_GRAYSCALE)
+#img2 = cv2.resize(img2, (640, 360))
 t = getTransform(img1, img2)
 (kp1, kp2, des1, des2) = detectOrb(img1, img2)
 (matches, goodMatches) = matchBf(des1, des2, norm=cv2.NORM_HAMMING)
 (goodMatchesHom, H) = filterMatchesHomography(kp1, kp2, goodMatches)
 
-print 'keypoints = ', len(kp1), ' -- ', len(kp2)
-print 'Good: ', len(goodMatches), ' out of ', len(matches)
-print 'Homography: ', len(goodMatchesHom), ' out of ', len(goodMatches)
+print 'keypoints =', len(kp1), '--', len(kp2)
+print 'Good:', len(goodMatches), 'out of', len(matches)
+print 'Homography:', len(goodMatchesHom), 'out of', len(goodMatches)
 print H
 
 img = getLargeImage(img1, img2)
