@@ -57,7 +57,7 @@ def detectSurf(img1, img2):
     return (kp1, kp2, des1, des2)
 
 def detectOrb(img1, img2):
-    detector = cv2.ORB(100000, 1.2, 8, 31, 0, 4, cv2.ORB_HARRIS_SCORE, 31)
+    detector = cv2.ORB(30000, 1.2, 8, 31, 0, 4, cv2.ORB_HARRIS_SCORE, 31)
     kp1, des1 = detector.detectAndCompute(img1, None)
     kp2, des2 = detector.detectAndCompute(img2, None)
     return (kp1, kp2, des1, des2)
@@ -103,8 +103,8 @@ FILES = ('cab_night.jpg', 'rsz_1cab.jpg')
 FILES = ('back1.jpg', 'back_rain.jpg')
 FILES = ('cab_night.jpg', 'cab_low.jpg')
 FILES = ('back_rain.jpg', 'back_small.jpg')
+FILES = ('back1.jpg', 'back3.jpg')
 img1 = cv2.imread(FILES[0], cv2.IMREAD_GRAYSCALE)
-img1 = cv2.resize(img1, (512, 288))
 img2 = cv2.imread(FILES[1], cv2.IMREAD_GRAYSCALE)
 #img2 = cv2.resize(img2, (640, 360))
 t = getTransform(img1, img2)
