@@ -90,10 +90,16 @@ def matchFlann(des1, des2):
     return matches
 
 def matchBf(des1, des2, norm=cv2.NORM_HAMMING):
-    bf = cv2.BFMatcher(norm, crossCheck=False)
-    matches = bf.knnMatch(des1, des2, k=2)
-    goodMatches = [m for (m, n) in matches if m.distance < 0.75*n.distance]
-    return (matches, goodMatches)
+    bf = cv2.BFMatcher(norm, crossCheck=True)
+    matches = bf.knnMatch(des1, des2, k=1)
+    print matches
+#    goodMatches = [m for (m, n) in matches if m.distance < 0.75*n.distance]
+    matches = [m[0] for m in matches if m != []]
+    print matches
+    return (matches, matches)
+
+def getTransformedBox():
+    pass
 
 def numMatches(img1, img2):
 #    img1 = cv2.imread(file1, cv2.IMREAD_GRAYSCALE)
@@ -104,10 +110,11 @@ def numMatches(img1, img2):
     (kp1, kp2, des1, des2) = detectOrb(img1, img2)
     (matches, goodMatches) = matchBf(des1, des2, norm=cv2.NORM_HAMMING)
     (goodMatchesHom, H) = filterMatchesHomography(kp1, kp2, goodMatches)
+    
     return min(100, len(goodMatchesHom))
 
 if __name__ == '__main__':
-    FILES = ('zubud_small/object0003.view05.png', 'zubud_small/object0003.view03.png')
+    FILES = ('zubud/object0012.view01.png', 'zubud/object0001.view01.png')
     img1 = cv2.imread(FILES[0], cv2.IMREAD_GRAYSCALE)
     img2 = cv2.imread(FILES[1], cv2.IMREAD_GRAYSCALE)
     #img2 = cv2.resize(img2, (640, 360))
