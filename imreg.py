@@ -95,17 +95,19 @@ def matchBf(des1, des2, norm=cv2.NORM_HAMMING):
     goodMatches = [m for (m, n) in matches if m.distance < 0.75*n.distance]
     return (matches, goodMatches)
 
-def numMatches(file1, file2):
-    img1 = cv2.imread(file1, cv2.IMREAD_GRAYSCALE)
-    img2 = cv2.imread(file2, cv2.IMREAD_GRAYSCALE)
+def numMatches(img1, img2):
+#    img1 = cv2.imread(file1, cv2.IMREAD_GRAYSCALE)
+#    img2 = cv2.imread(file2, cv2.IMREAD_GRAYSCALE)
+    cv2.cvtColor(img1, cv2.COLOR_RGB2GRAY)
+    cv2.cvtColor(img2, cv2.COLOR_RGB2GRAY)
     t = getTransform(img1, img2)
     (kp1, kp2, des1, des2) = detectOrb(img1, img2)
     (matches, goodMatches) = matchBf(des1, des2, norm=cv2.NORM_HAMMING)
     (goodMatchesHom, H) = filterMatchesHomography(kp1, kp2, goodMatches)
-    return len(goodMatchesHom)
+    return min(100, len(goodMatchesHom))
 
 if __name__ == '__main__':
-    FILES = ('back1.jpg', 'back3.jpg')
+    FILES = ('zubud_small/object0003.view05.png', 'zubud_small/object0003.view03.png')
     img1 = cv2.imread(FILES[0], cv2.IMREAD_GRAYSCALE)
     img2 = cv2.imread(FILES[1], cv2.IMREAD_GRAYSCALE)
     #img2 = cv2.resize(img2, (640, 360))
