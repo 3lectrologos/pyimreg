@@ -1,5 +1,7 @@
 import numpy as np
+import numpy.linalg
 import cv2
+
 
 def filterMatchesHomography(kp1, kp2, matches):
     points1 = np.array([kp1[m.queryIdx].pt for m in matches]).reshape(-1, 1, 2)
@@ -44,42 +46,10 @@ def plotMatches(keypoints, matches, transform, color=(0, 255, 0)):
         p2 = keypoints[1][m.trainIdx].pt  
         cv2.line(img, tint(p1), transform(p2), color=color)
 
-def detectSift(img1, img2):
-    detector = cv2.SIFT()
-    kp1, des1 = detector.detectAndCompute(img1, None)
-    kp2, des2 = detector.detectAndCompute(img2, None)
-    return (kp1, kp2, des1, des2)
-
-def detectSurf(img1, img2):
-    detector = cv2.SURF()
-    kp1, des1 = detector.detectAndCompute(img1, None)
-    kp2, des2 = detector.detectAndCompute(img2, None)
-    return (kp1, kp2, des1, des2)
-
-def detectOrb(img1, img2):
+def detectOrb(img):
     detector = cv2.ORB(30000, 1.2, 8, 31, 0, 4, cv2.ORB_HARRIS_SCORE, 31)
-    kp1, des1 = detector.detectAndCompute(img1, None)
-    kp2, des2 = detector.detectAndCompute(img2, None)
-    return (kp1, kp2, des1, des2)
-
-def detectFreak(img1, img2):
-    detector = cv2.ORB(10000, 1.2, 8, 31, 0, 2, cv2.ORB_HARRIS_SCORE, 31)
-    #detector = cv2.FeatureDetector_create('')
-    descriptor = cv2.DescriptorExtractor_create('FREAK')
-    kp1 = detector.detect(img1, None)
-    kp2 = detector.detect(img2, None)
-    kp1, des1 = descriptor.compute(img1, kp1)
-    kp2, des2 = descriptor.compute(img2, kp2)
-    return (kp1, kp2, des1, des2)
-
-def detectSurfOrb(img1, img2):
-    detector = cv2.FeatureDetector_create('SURF')
-    descriptor = cv2.DescriptorExtractor_create('ORB')
-    kp1 = detector.detect(img1, None)
-    kp2 = detector.detect(img2, None)
-    kp1, des1 = descriptor.compute(img1, kp1)
-    kp2, des2 = descriptor.compute(img2, kp2)
-    return (kp1, kp2, des1, des2)
+    kp, des = detector.detectAndCompute(img, None)
+    return (kp, des)
 
 def matchFlann(des1, des2):
     FLANN_INDEX_KDTREE = 0
@@ -90,27 +60,30 @@ def matchFlann(des1, des2):
     return matches
 
 def matchBf(des1, des2, norm=cv2.NORM_HAMMING):
-    bf = cv2.BFMatcher(norm, crossCheck=True)
-    matches = bf.knnMatch(des1, des2, k=1)
-    print matches
-#    goodMatches = [m for (m, n) in matches if m.distance < 0.75*n.distance]
-    matches = [m[0] for m in matches if m != []]
-    print matches
-    return (matches, matches)
+    bf = cv2.BFMatcher(norm, crossCheck=False)
+    matches = bf.knnMatch(des1, des2, k=2)
+    goodMatches = [m for (m, n) in matches if m.distance < 0.75*n.distance]
+#    matches = [m[0] for m in matches if m != []]
+    return (matches, goodMatches)
 
-def getTransformedBox():
-    pass
+def getTransformedBox(img, H):
+    (h, w) = img.shape
+    corners = np.array([[0, 0], [h, 0], [h, w], [0, w]], dtype='float32')
+    corners = np.array([corners])
+    return cv2.perspectiveTransform(corners, H)
 
-def numMatches(img1, img2):
-#    img1 = cv2.imread(file1, cv2.IMREAD_GRAYSCALE)
-#    img2 = cv2.imread(file2, cv2.IMREAD_GRAYSCALE)
-    cv2.cvtColor(img1, cv2.COLOR_RGB2GRAY)
-    cv2.cvtColor(img2, cv2.COLOR_RGB2GRAY)
-    t = getTransform(img1, img2)
-    (kp1, kp2, des1, des2) = detectOrb(img1, img2)
+def numMatches(img1, img2, cache1=None, cache2=None):
+    img1 = cv2.cvtColor(img1, cv2.COLOR_RGB2GRAY)
+    img2 = cv2.cvtColor(img2, cv2.COLOR_RGB2GRAY)
+    (kp1, des1) = detectOrb(img1)
+    (kp2, des2) = detectOrb(img2)
     (matches, goodMatches) = matchBf(des1, des2, norm=cv2.NORM_HAMMING)
     (goodMatchesHom, H) = filterMatchesHomography(kp1, kp2, goodMatches)
-    
+    if numpy.linalg.det(H) < 0.0001:
+        return 1
+    trcorners = getTransformedBox(img1, H)
+    if not cv2.isContourConvex(trcorners):
+        return 1
     return min(100, len(goodMatchesHom))
 
 if __name__ == '__main__':
@@ -119,20 +92,28 @@ if __name__ == '__main__':
     img2 = cv2.imread(FILES[1], cv2.IMREAD_GRAYSCALE)
     #img2 = cv2.resize(img2, (640, 360))
     t = getTransform(img1, img2)
-    (kp1, kp2, des1, des2) = detectOrb(img1, img2)
+    (kp1, des1) = detectOrb(img1)
+    (kp2, des2) = detectOrb(img2)
     (matches, goodMatches) = matchBf(des1, des2, norm=cv2.NORM_HAMMING)
     (goodMatchesHom, H) = filterMatchesHomography(kp1, kp2, goodMatches)
+    trcorners = getTransformedBox(img1, H)
 
-    print 'keypoints =', len(kp1), '--', len(kp2)
+    print 'Keypoints =', len(kp1), '--', len(kp2)
     print 'Good:', len(goodMatches), 'out of', len(matches)
     print 'Homography:', len(goodMatchesHom), 'out of', len(goodMatches)
     print H
+    print 'det(H) =', numpy.linalg.det(H)
+    print 'Convex?', cv2.isContourConvex(trcorners)
 
     img = getLargeImage(img1, img2)
     img = cv2.cvtColor(img, cv2.COLOR_GRAY2RGB)
     plotKeypoints(kp1)
     plotKeypoints(kp2, t)
     plotMatches((kp1, kp2), goodMatchesHom, t)
+    for i in range(4):
+        p1 = t(trcorners[0,i,:])
+        p2 = t(trcorners[0,(i+1)%4,:])
+        cv2.line(img, p1, p2, thickness=3, color=(0, 0, 255))
     
     cv2.imshow('image', img)
     cv2.waitKey(0)

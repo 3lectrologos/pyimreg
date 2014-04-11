@@ -12,7 +12,7 @@ import chist
 
 
 IMG_DIR = 'zubud'
-CLUSTERS = 30
+CLUSTERS = 25
 FILES_PER_CLUSTER = 5
 TMP_FILE = 'tmp.pickle'
 
@@ -35,11 +35,11 @@ def get_scores():
     it = 0
     nm = np.zeros((len(images), len(images)))
     cd = np.zeros((len(images), len(images)))
+    cache = dict()
     for i in range(len(images)):
         for j in range(len(images)):
-            nm[i,j] = imreg.numMatches(images[i], images[j])
-            cd[i,j] = chist.distance(images[i], images[j])
-            #print (i, j), '->', 'matches:', nm[i,j], ', dist:', cd[i,j]
+            nm[i, j] = imreg.numMatches(images[i], images[j])
+            cd[i, j] = chist.distance(images[i], images[j])
             it = it + 1
             bar.update(it)
     bar.finish()
@@ -52,10 +52,12 @@ else:
     (nm, cd) = get_scores()
     with open('tmp.pickle', 'w') as fout:
         pickle.dump((nm, cd), fout)
+
+#np.savetxt('img_matches.txt', nm, fmt="%d")
         
-(images, files) = get_images(CLUSTERS)
-print [(files[i], files[j]) for i in range(100) for j in range(100)
-       if nm[i, j] == 100 and i >= j + 5]
+#(images, files) = get_images(CLUSTERS)
+#print [(files[i], files[j]) for i in range(100) for j in range(100)
+#       if nm[i, j] == 100 and i >= j + 5]
         
 plt.plot(nm, cd, 'ro')
 for i in range(CLUSTERS):
