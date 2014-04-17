@@ -33,14 +33,14 @@ def getTransform(img1, img2):
     w1 = img1.shape[1]
     return lambda x: tint((x[0] + w1 + 100, x[1] + h - h2))
 
-def plotKeypoints(keypoints, transform=None, color=(255, 0, 0)):
+def plotKeypoints(img, keypoints, transform=None, color=(255, 0, 0)):
     if transform == None:
         transform = lambda x: x
     for kp in keypoints:
         p = kp.pt
         cv2.circle(img, tint(transform(p)), 3, color=color, thickness=1)
 
-def plotMatches(keypoints, matches, transform, color=(0, 255, 0)):
+def plotMatches(img, keypoints, matches, transform, color=(0, 255, 0)):
     for m in matches:
         p1 = keypoints[0][m.queryIdx].pt
         p2 = keypoints[1][m.trainIdx].pt  
@@ -73,12 +73,28 @@ def getTransformedBox(img, H):
     return cv2.perspectiveTransform(corners, H)
 
 def numMatches(img1, img2, cache1=None, cache2=None):
-    img1 = cv2.cvtColor(img1, cv2.COLOR_RGB2GRAY)
-    img2 = cv2.cvtColor(img2, cv2.COLOR_RGB2GRAY)
+    img1 = cv2.cvtColor(img1, cv2.COLOR_BGR2GRAY)
+    img2 = cv2.cvtColor(img2, cv2.COLOR_BGR2GRAY)
     (kp1, des1) = detectOrb(img1)
     (kp2, des2) = detectOrb(img2)
     (matches, goodMatches) = matchBf(des1, des2, norm=cv2.NORM_HAMMING)
     (goodMatchesHom, H) = filterMatchesHomography(kp1, kp2, goodMatches)
+
+    #img = getLargeImage(img1, img2)
+    #t = getTransform(img1, img2)
+    #trcorners = getTransformedBox(img1, H)
+    #img = cv2.cvtColor(img, cv2.COLOR_GRAY2RGB)
+    #plotKeypoints(img, kp1)
+    #plotKeypoints(img, kp2, t)
+    #plotMatches(img, (kp1, kp2), goodMatchesHom, t)
+    #for i in range(4):
+    #    p1 = t(trcorners[0,i,:])
+    #    p2 = t(trcorners[0,(i+1)%4,:])
+    #    cv2.line(img, p1, p2, thickness=3, color=(0, 0, 255))
+    #cv2.imshow('image', img)
+    #cv2.waitKey(0)
+    #cv2.destroyAllWindows()
+
     if numpy.linalg.det(H) < 0.0001:
         return 1
     trcorners = getTransformedBox(img1, H)
@@ -87,7 +103,7 @@ def numMatches(img1, img2, cache1=None, cache2=None):
     return min(100, len(goodMatchesHom))
 
 if __name__ == '__main__':
-    FILES = ('zubud/object0012.view01.png', 'zubud/object0001.view01.png')
+    FILES = ('zubud/object0168.view01.png', 'zubud/object0100.view05.png')
     img1 = cv2.imread(FILES[0], cv2.IMREAD_GRAYSCALE)
     img2 = cv2.imread(FILES[1], cv2.IMREAD_GRAYSCALE)
     #img2 = cv2.resize(img2, (640, 360))
@@ -107,9 +123,9 @@ if __name__ == '__main__':
 
     img = getLargeImage(img1, img2)
     img = cv2.cvtColor(img, cv2.COLOR_GRAY2RGB)
-    plotKeypoints(kp1)
-    plotKeypoints(kp2, t)
-    plotMatches((kp1, kp2), goodMatchesHom, t)
+    plotKeypoints(img, kp1)
+    plotKeypoints(img, kp2, t)
+    plotMatches(img, (kp1, kp2), goodMatchesHom, t)
     for i in range(4):
         p1 = t(trcorners[0,i,:])
         p2 = t(trcorners[0,(i+1)%4,:])

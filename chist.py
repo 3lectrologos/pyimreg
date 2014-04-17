@@ -4,23 +4,24 @@ import matplotlib.pyplot as plt
 import matplotlib.colors
 import matplotlib.image
 
-def sim(img1, img2):
-    pass
 
-def getHistogram(img, bins=64):
+def getHistogram(img, bins):
     img = matplotlib.colors.rgb_to_hsv(img)
     (hist, _) = np.histogram(img[:,:,0].flatten(), bins=bins, density=True)
     return hist
 
-def distance(img1, img2):
-    h1 = getHistogram(img1)
-    h2 = getHistogram(img2)
+def hdistance(h1, h2):
     return scipy.spatial.distance.cityblock(h1, h2)
+
+def distance(img1, img2, bins=64):
+    h1 = getHistogram(img1, bins)
+    h2 = getHistogram(img2, bins)
+    return hdistance(h1, h2)
 
 if __name__ == '__main__':
     FILES = ('img/dominos1.jpg',
-             'zubud_small/object0003.view05.png',
-             'zubud_small/object0003.view03.png')
+             'zubud/object0003.view05.png',
+             'zubud/object0003.view03.png')
     img1 = matplotlib.image.imread(FILES[1])
     img2 = matplotlib.image.imread(FILES[2])
     h1 = getHistogram(img1)
