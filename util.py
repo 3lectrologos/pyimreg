@@ -1,11 +1,13 @@
 import os
 import random
 import subprocess
+
 import numpy as np
 import sklearn.ensemble
 import sklearn.tree
 import cv2
 import progressbar as pb
+
 import chist
 import imreg
 
