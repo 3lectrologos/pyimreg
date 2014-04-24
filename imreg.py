@@ -61,10 +61,17 @@ def matchFlann(des1, des2):
 
 def matchBf(des1, des2, norm=cv2.NORM_HAMMING):
     bf = cv2.BFMatcher(norm, crossCheck=False)
-    matches = bf.knnMatch(des1, des2, k=2)
-    goodMatches = [m for (m, n) in matches if m.distance < 0.75*n.distance]
-#    matches = [m[0] for m in matches if m != []]
-    return (matches, goodMatches)
+    matches12 = bf.knnMatch(des1, des2, k=2)
+    matches21 = bf.knnMatch(des2, des1, k=2)
+    goodMatches12 = [m for (m, n) in matches12 if m.distance < 0.8*n.distance]
+    goodMatches21 = [m for (m, n) in matches21 if m.distance < 0.8*n.distance]
+    goodMatches = []
+    for m1 in goodMatches12:
+        for m2 in goodMatches21:
+            if m1.queryIdx == m2.trainIdx and m1.trainIdx == m2.queryIdx:
+                goodMatches.append(m1)
+                break
+    return (matches12, goodMatches)
 
 def getTransformedBox(img, H):
     (h, w) = img.shape
@@ -80,21 +87,6 @@ def numMatches(img1, img2, cache1=None, cache2=None):
     (matches, goodMatches) = matchBf(des1, des2, norm=cv2.NORM_HAMMING)
     (goodMatchesHom, H) = filterMatchesHomography(kp1, kp2, goodMatches)
 
-    #img = getLargeImage(img1, img2)
-    #t = getTransform(img1, img2)
-    #trcorners = getTransformedBox(img1, H)
-    #img = cv2.cvtColor(img, cv2.COLOR_GRAY2RGB)
-    #plotKeypoints(img, kp1)
-    #plotKeypoints(img, kp2, t)
-    #plotMatches(img, (kp1, kp2), goodMatchesHom, t)
-    #for i in range(4):
-    #    p1 = t(trcorners[0,i,:])
-    #    p2 = t(trcorners[0,(i+1)%4,:])
-    #    cv2.line(img, p1, p2, thickness=3, color=(0, 0, 255))
-    #cv2.imshow('image', img)
-    #cv2.waitKey(0)
-    #cv2.destroyAllWindows()
-
     if numpy.linalg.det(H) < 0.0001:
         return 1
     trcorners = getTransformedBox(img1, H)
@@ -103,9 +95,11 @@ def numMatches(img1, img2, cache1=None, cache2=None):
     return min(100, len(goodMatchesHom))
 
 if __name__ == '__main__':
-    FILES = ('zubud/object0168.view01.png', 'zubud/object0100.view05.png')
-    img1 = cv2.imread(FILES[0], cv2.IMREAD_GRAYSCALE)
-    img2 = cv2.imread(FILES[1], cv2.IMREAD_GRAYSCALE)
+    FILES = ('zubud/object0161.view03.png', 'zubud/object0051.view02.png')
+    img1 = cv2.imread(FILES[0])
+    img2 = cv2.imread(FILES[1])
+    img1 = cv2.cvtColor(img1, cv2.COLOR_BGR2GRAY)
+    img2 = cv2.cvtColor(img2, cv2.COLOR_BGR2GRAY)
     #img2 = cv2.resize(img2, (640, 360))
     t = getTransform(img1, img2)
     (kp1, des1) = detectOrb(img1)
