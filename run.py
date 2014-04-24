@@ -1,4 +1,5 @@
-import os
+#!/usr/bin/env python
+
 import os.path
 import pickle
 import math
@@ -12,7 +13,7 @@ import imreg
 import chist
 
 
-CLUSTERS = 200
+CLUSTERS = 10
 TMP_FILE = 'tmp.pickle'
 
 if os.path.isfile(TMP_FILE):
@@ -23,17 +24,24 @@ else:
     with open('tmp.pickle', 'w') as fout:
         pickle.dump((nm, cd), fout)
 
-#np.savetxt('img_matches.txt', nm, fmt="%d")
-        
 (images, files) = util.get_images(CLUSTERS)
-print [(files[i], files[j]) for i in range(1000) for j in range(1000)
-       if (nm[i, j] > 10 and
-           j not in range(i - i % util.FILES_PER_CLUSTER,
-                          i + (util.FILES_PER_CLUSTER - i % util.FILES_PER_CLUSTER)))]
-        
-plt.plot(nm, cd, 'ro')
-for i in range(CLUSTERS):
-    lo = i*util.FILES_PER_CLUSTER
-    hi = (i+1)*util.FILES_PER_CLUSTER
-    plt.plot(nm[lo:hi, lo:hi], cd[lo:hi, lo:hi], 'go')
-plt.show()
+#print [(files[i], files[j]) for i in range(1000) for j in range(1000)
+#       if (nm[i, j] > 15 and not util.same_cluster(i, j))]
+
+x = []
+y = []
+for i in range(nm.shape[0]):
+    for j in range(nm.shape[1]):
+        if nm[i, j] != 0:
+            x.append((nm[i, j], cd[i, j]))
+            if util.same_cluster(i, j):
+                y.append(1)
+            else:
+                y.append(-1)
+x = np.array(x)
+y = np.array(y)
+util.train_classifier(x, y)
+
+#plt.plot(x[y==-1, 0], x[y==-1, 1], 'ro')
+#plt.plot(x[y==1, 0], x[y==1, 1], 'go')
+#plt.show()
