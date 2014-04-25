@@ -19,13 +19,11 @@ def distance(img1, img2, bins=64):
     return hdistance(h1, h2)
 
 if __name__ == '__main__':
-    FILES = ('img/dominos1.jpg',
-             'zubud/object0003.view05.png',
-             'zubud/object0003.view03.png')
-    img1 = matplotlib.image.imread(FILES[1])
-    img2 = matplotlib.image.imread(FILES[2])
-    h1 = getHistogram(img1)
-    h2 = getHistogram(img2)
+    FILES = ('img/cab_new.jpg', 'img/cab_night.jpg')
+    img1 = matplotlib.image.imread(FILES[0])
+    img2 = matplotlib.image.imread(FILES[1])
+    h1 = getHistogram(img1, 64)
+    h2 = getHistogram(img2, 64)
     dist = scipy.spatial.distance.cityblock(h1, h2)
     print dist
 #    plt.colorbar()
